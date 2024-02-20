@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use App\Models\Recipe;
+use Validator;
 
 class RecipeController extends Controller
 {
@@ -14,7 +15,14 @@ class RecipeController extends Controller
     public function index()
     {
         
-        $recipes = Recipe::all()->paginate(5);
+        $recipes = Recipe::all();
+        if (is_null($recipes->first())) {
+            return response()->json([
+                'status' => 'failed',
+                'message' => 'No recipes found!',
+            ], 200);
+        }
+
         return response()->json(['staus' => 200,'data' => $recipes]);
     }
 
@@ -25,14 +33,23 @@ class RecipeController extends Controller
      */
     public function store(Request $request)
     {
-       
-        $request->validate([
-            'name' => 'required',
+        $validate = Validator::make($request->all(), [
+            'name' => 'required|string',
             'preptime' => 'required',
-            'difficulty' => 'required',
-            'vegetarian' => 'required',
-            'rating' => 'required',
+            'difficulty' => 'required|integer',
+            'vegetarian' => 'required|boolean',
+            'rating' => 'required|integer',
         ]);
+
+        if($validate->fails()){  
+            return response()->json([
+                'status' => 'failed',
+                'message' => 'Validation Error!',
+                'data' => $validate->errors(),
+            ], 403);
+        }
+       
+        
  
         $recipes = Recipe::create($request->all());
         return response()->json(['staus' => 200,'data' => $recipes]);
@@ -46,9 +63,11 @@ class RecipeController extends Controller
     {
         //
         $recipes=Recipe::find($id);
-       // $recipes->update($request->all());
-       if (is_null($recipes)) {
-            return $this->sendError('Recipe not found.');
+        if (is_null($recipes->first())) {
+            return response()->json([
+                'status' => 'failed',
+                'message' => 'No recipes found!',
+            ], 200);
         }
         return response()->json(['staus' => 200,'data' => $recipes,'message' => "recipe viewed successfully"]);
        
@@ -61,16 +80,28 @@ class RecipeController extends Controller
     public function update(Request $request, string $id)
     {
       
-        $request->validate([
-            'name' => 'required',
+        $validate = Validator::make($request->all(), [
+            'name' => 'required|string',
             'preptime' => 'required',
-            'difficulty' => 'required',
-            'vegetarian' => 'required',
-            'rating' => 'required',
+            'difficulty' => 'required|integer',
+            'vegetarian' => 'required|boolean',
+            'rating' => 'required|integer',
         ]);
+
+        if($validate->fails()){  
+            return response()->json([
+                'status' => 'failed',
+                'message' => 'Validation Error!',
+                'data' => $validate->errors(),
+            ], 403);
+        }
+
         $recipes=Recipe::find($id);
-        if (is_null($recipes)) {
-            return $this->sendError('Recipe not found.');
+        if (is_null($recipes->first())) {
+            return response()->json([
+                'status' => 'failed',
+                'message' => 'No recipes found!',
+            ], 200);
         }
         $recipes->update($request->all());
  
@@ -85,8 +116,11 @@ class RecipeController extends Controller
     {
         
         $recipes=Recipe::find($id);
-        if (is_null($recipes)) {
-            return $this->sendError('Recipe not found.');
+        if (is_null($recipes->first())) {
+            return response()->json([
+                'status' => 'failed',
+                'message' => 'No recipes found!',
+            ], 200);
         }
         $recipes->delete();
         return response()->json(['staus' => 200,'data' => $recipes,'message' => "recipe deleted successfully"]);
